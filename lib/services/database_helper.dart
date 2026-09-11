@@ -3,7 +3,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// Clase encargada EXCLUSIVAMENTE de abrir la conexión a SQLite y crear las tablas.
+/// Clase encargada de abrir la conexión a SQLite y crear las tablas.
 /// Utiliza el patrón Singleton para garantizar una única conexión abierta en toda la app.
 class DatabaseHelper {
   // 1. Constructor privado y la instancia única
@@ -43,8 +43,6 @@ class DatabaseHelper {
         password TEXT NOT NULL
       )
     ''');
-
-    // En el futuro, aquí agregaremos las demás tablas (ej: hotels, bookings, etc.)
   }
 
   // 5. Método auxiliar para cerrar la BD si se necesita

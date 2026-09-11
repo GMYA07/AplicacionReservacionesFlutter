@@ -3,8 +3,9 @@
 import '../models/user_model.dart';
 import 'database_helper.dart';
 
-/// Servicio modular encargado EXCLUSIVAMENTE de las operaciones
-/// de la tabla "users" en SQLite (Registro, Login, Validaciones).
+/// Servicio encargadode las operaciones
+/// de autenticación y registro de usuarios.
+/// 
 class AuthService {
   // Referencia a nuestro DatabaseHelper para pedir la conexión
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
@@ -32,7 +33,6 @@ class AuthService {
   }
 
   /// Verifica las credenciales (email y contraseña).
-  /// Si coinciden, devuelve el UserModel con sus datos; si no, devuelve null.
   Future<UserModel?> loginUser(String email, String password) async {
     final db = await _dbHelper.database;
 
