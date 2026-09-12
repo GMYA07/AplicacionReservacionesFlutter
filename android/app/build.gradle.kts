@@ -7,6 +7,7 @@ plugins {
 android {
     namespace = "com.example.booking_app"
     compileSdk = flutter.compileSdkVersion
+    buildToolsVersion = "34.0.0"
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
