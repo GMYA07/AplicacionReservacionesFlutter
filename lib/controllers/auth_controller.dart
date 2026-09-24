@@ -27,10 +27,11 @@ class AuthController extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
+    String? phone,
   }) async {
     // 1. Validaciones básicas antes de consultar la base de datos
     if (name.trim().isEmpty || email.trim().isEmpty || password.trim().isEmpty) {
-      _errorMessage = 'Por favor, completa todos los campos.';
+      _errorMessage = 'Por favor, completa los campos obligatorios.';
       notifyListeners();
       return false;
     }
@@ -47,6 +48,16 @@ class AuthController extends ChangeNotifier {
       return false;
     }
 
+    final cleanPhone = phone?.trim();
+    if (cleanPhone != null && cleanPhone.isNotEmpty) {
+      final phoneRegex = RegExp(r'^[0-9+\s\-()]{7,20}$');
+      if (!phoneRegex.hasMatch(cleanPhone)) {
+        _errorMessage = 'Por favor, ingresa un número de teléfono válido.';
+        notifyListeners();
+        return false;
+      }
+    }
+
     // 2. Activamos el estado de carga
     _setLoading(true);
     _errorMessage = null;
@@ -56,6 +67,7 @@ class AuthController extends ChangeNotifier {
         name: name.trim(),
         email: email.trim(),
         password: password,
+        phone: cleanPhone?.isNotEmpty == true ? cleanPhone : null,
       );
 
       // Guardamos en SQLite a través del servicio

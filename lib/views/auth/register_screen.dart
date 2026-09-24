@@ -14,6 +14,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Controladores para leer el texto de cada campo
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   // Instancia de nuestro AuthController (la lógica)
@@ -27,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // Siempre liberamos los controladores de la memoria al salir de la pantalla
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _authController.dispose();
     super.dispose();
@@ -38,6 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       name: _nameController.text,
       email: _emailController.text,
       password: _passwordController.text,
+      phone: _phoneController.text,
     );
 
     // Verificamos que la pantalla siga visible antes de mostrar mensajes
@@ -124,6 +127,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   hintText: 'ejemplo@correo.com',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Campo: Teléfono (opcional)
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Número de teléfono (opcional)',
+                  hintText: '+52 123 456 7890',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.phone_outlined),
                 ),
               ),
               const SizedBox(height: 16),

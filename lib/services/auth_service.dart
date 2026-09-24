@@ -21,11 +21,13 @@ class AuthService {
       throw Exception('El correo electrónico ya se encuentra registrado.');
     }
 
-    // 2. Guardamos el correo en minúsculas para evitar problemas de mayúsculas/minúsculas
+    // 2. Guardamos el correo en minúsculas y normalizamos los campos
     final userToSave = UserModel(
       name: user.name.trim(),
       email: user.email.trim().toLowerCase(),
       password: user.password,
+      phone: user.phone?.trim().isNotEmpty == true ? user.phone!.trim() : null,
+      createdAt: user.createdAt,
     );
 
     // 3. Insertamos en SQLite usando toMap()

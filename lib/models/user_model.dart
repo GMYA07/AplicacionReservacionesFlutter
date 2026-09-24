@@ -25,11 +25,15 @@ class UserModel {
       'name': name,
       'email': email,
       'password': password,
-      'phone': phone,
-      'created_at': createdAt,
     };
     if (id != null) {
       map['id'] = id;
+    }
+    if (phone != null && phone!.trim().isNotEmpty) {
+      map['phone'] = phone!.trim();
+    }
+    if (createdAt != null) {
+      map['created_at'] = createdAt;
     }
     return map;
   }

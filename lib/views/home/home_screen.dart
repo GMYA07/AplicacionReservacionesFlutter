@@ -53,6 +53,20 @@ class HomeScreen extends StatelessWidget {
                 user.email,
                 style: const TextStyle(fontSize: 15, color: Colors.grey),
               ),
+              if (user.phone != null && user.phone!.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.phone, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(
+                      user.phone!,
+                      style: const TextStyle(fontSize: 15, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 40),
 
               // Botón simple de Cerrar sesión
