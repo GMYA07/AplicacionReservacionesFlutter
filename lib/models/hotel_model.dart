@@ -11,6 +11,7 @@ class HotelModel {
   final int stars;
   final String? imageUrl;
   final String? createdAt;
+  final double? minPrice; // Precio mínimo obtenido desde la tabla rooms
 
   const HotelModel({
     this.id,
@@ -21,6 +22,7 @@ class HotelModel {
     this.stars = 3,
     this.imageUrl,
     this.createdAt,
+    this.minPrice,
   });
 
   /// Convierte el objeto HotelModel a un Map para insertarlo o actualizarlo en SQLite
@@ -51,6 +53,7 @@ class HotelModel {
       stars: (map['stars'] as num?)?.toInt() ?? 3,
       imageUrl: map['image_url'] as String?,
       createdAt: map['created_at'] as String?,
+      minPrice: (map['min_price'] as num?)?.toDouble(),
     );
   }
 
@@ -64,6 +67,7 @@ class HotelModel {
     int? stars,
     String? imageUrl,
     String? createdAt,
+    double? minPrice,
   }) {
     return HotelModel(
       id: id ?? this.id,
@@ -74,6 +78,7 @@ class HotelModel {
       stars: stars ?? this.stars,
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
+      minPrice: minPrice ?? this.minPrice,
     );
   }
 }

@@ -1,8 +1,12 @@
 // lib/views/home/home_screen.dart
 
 import 'package:flutter/material.dart';
+import '../../models/hotel_model.dart';
 import '../../models/user_model.dart';
+import '../../services/hotel_service.dart';
 import '../../utils/app_colors.dart';
+import '../hotel_detail/hotel_detail_screen.dart';
+import '../widgets/hotel_card.dart';
 import 'widgets/guests_selection_modal.dart';
 import 'widgets/user_profile_modal.dart';
 
@@ -20,6 +24,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Servicio para consultar y sembrar hoteles en SQLite
+  final HotelService _hotelService = HotelService();
+
   // Controlador para el campo de búsqueda de destino
   final TextEditingController _destinationController = TextEditingController();
 
@@ -31,6 +38,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _adults = 2;
   int _children = 0;
 
+  // Estado de hoteles consultados desde SQLite
+  List<HotelModel> _hotels = [];
+  bool _isLoadingHotels = true;
+
   @override
   void initState() {
     super.initState();
@@ -40,12 +51,37 @@ class _HomeScreenState extends State<HomeScreen> {
       start: now.add(const Duration(days: 1)),
       end: now.add(const Duration(days: 4)),
     );
+
+    // Cargamos los hoteles desde SQLite al iniciar
+    _loadHotels();
   }
 
   @override
   void dispose() {
     _destinationController.dispose();
     super.dispose();
+  }
+
+  /// Consulta los hoteles disponibles desde la base de datos SQLite
+  Future<void> _loadHotels({String? cityQuery}) async {
+    setState(() {
+      _isLoadingHotels = true;
+    });
+
+    try {
+      final hotels = await _hotelService.getAvailableHotels(cityQuery: cityQuery);
+      if (!mounted) return;
+      setState(() {
+        _hotels = hotels;
+        _isLoadingHotels = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _hotels = [];
+        _isLoadingHotels = false;
+      });
+    }
   }
 
   /// Formatea el rango de fechas para mostrarlo en el buscador
@@ -120,10 +156,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundGray,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+        child: RefreshIndicator(
+          color: AppColors.accentBlue,
+          onRefresh: () => _loadHotels(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               // ==========================================
               // 1. CABECERA AZUL ESTILO BOOKING.COM
               // ==========================================
@@ -290,6 +330,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   border: InputBorder.none,
                                 ),
+                                onSubmitted: (value) {
+                                  _loadHotels(cityQuery: value.trim());
+                                },
                               ),
                             ),
                             if (_destinationController.text.isNotEmpty)
@@ -299,6 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   setState(() {
                                     _destinationController.clear();
                                   });
+                                  _loadHotels();
                                 },
                               ),
                           ],
@@ -373,16 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             final destination = _destinationController.text.trim();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  destination.isEmpty
-                                      ? 'Buscando todos los alojamientos disponibles...'
-                                      : 'Buscando alojamientos en "$destination"...',
-                                ),
-                                backgroundColor: AppColors.primaryNavy,
-                              ),
-                            );
+                            _loadHotels(cityQuery: destination.isNotEmpty ? destination : null);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.accentBlue,
@@ -457,6 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 setState(() {
                                   _destinationController.text = city;
                                 });
+                                _loadHotels(cityQuery: city);
                               },
                             ),
                           );
@@ -467,11 +503,145 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // ==========================================
+              // 4. LISTADO DE TARJETAS DE HOTELES (SQLite)
+              // ==========================================
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Alojamientos disponibles',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    if (!_isLoadingHotels && _hotels.isNotEmpty)
+                      Text(
+                        '${_hotels.length} encontrados',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Estado 1: Cargando datos de SQLite
+              if (_isLoadingHotels)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40.0),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(color: AppColors.accentBlue),
+                        SizedBox(height: 12),
+                        Text(
+                          'Consultando alojamientos en la base de datos...',
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              // Estado 2: No hay hoteles en la base de datos o están desactivados
+              else if (_hotels.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  child: Container(
+                    padding: const EdgeInsets.all(24.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.hotel_class_outlined,
+                          size: 56,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'No hay alojamientos disponibles',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _destinationController.text.isNotEmpty
+                              ? 'No se encontraron hoteles disponibles en "${_destinationController.text}". Prueba buscando otra ciudad o destino.'
+                              : 'No hay hoteles registrados o con habitaciones disponibles en la base de datos.',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textMuted,
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (_destinationController.text.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _destinationController.clear();
+                              });
+                              _loadHotels();
+                            },
+                            icon: const Icon(Icons.refresh, color: AppColors.accentBlue),
+                            label: const Text(
+                              'Ver todos los alojamientos',
+                              style: TextStyle(
+                                color: AppColors.accentBlue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                )
+              // Estado 3: Lista de hoteles renderizados con HotelCard
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  child: Column(
+                    children: _hotels.map((hotel) {
+                      return HotelCard(
+                        hotel: hotel,
+                        onTap: () {
+                          // Navegación estática preparada hacia la vista de detalle
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HotelDetailScreen(hotel: hotel),
+                            ),
+                          );
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
             ],
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

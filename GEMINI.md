@@ -249,10 +249,10 @@ lib/
 ├── services/                     # Capa de datos y persistencia
 │   ├── database_helper.dart      # Singleton SQLite: tablas users, hotels, rooms, reservations, favorites (Implementado)
 │   ├── auth_service.dart         # Operaciones SQL de usuarios (Implementado)
-│   ├── hotel_service.dart        # Consultas SQL de hoteles y habitaciones (con Seed Data)
+│   ├── hotel_service.dart        # Consultas SQL de hoteles y habitaciones (Implementado)
 │   └── booking_service.dart      # Operaciones SQL de reservas e historial
 ├── utils/                        # Constantes, temas y utilidades
-│   ├── app_colors.dart           # Paleta oficial de colores Booking
+│   ├── app_colors.dart           # Paleta oficial de colores Booking (Implementado)
 │   ├── app_routes.dart           # Rutas nombradas de navegación
 │   ├── constants.dart            # Constantes globales de configuración
 │   └── formatters.dart           # Formato de precios (moneda) y fechas ISO
@@ -261,16 +261,16 @@ lib/
 │   │   ├── login_screen.dart     # Pantalla de Login reactiva (Implementada)
 │   │   └── register_screen.dart  # Pantalla de Registro reactiva (Implementada)
 │   ├── home/                     # Módulo Principal
-│   │   ├── home_screen.dart      # Pantalla principal con cabecera y buscador Booking
+│   │   ├── home_screen.dart      # Pantalla principal con cabecera, buscador y tarjetas SQLite (Implementado)
 │   │   ├── main_navigation_screen.dart # BottomNavigationBar (Buscar, Guardados, Reservas, Perfil)
 │   │   └── widgets/              # Componentes modulares del Home
-│   │       ├── guests_selection_modal.dart # Modal para habitaciones y huéspedes
-│   │       └── user_profile_modal.dart     # Modal de perfil y cierre de sesión
+│   │       ├── guests_selection_modal.dart # Modal para habitaciones y huéspedes (Implementado)
+│   │       └── user_profile_modal.dart     # Modal de perfil y cierre de sesión (Implementado)
 │   ├── search/                   # Módulo de Búsqueda
 │   │   ├── search_results_screen.dart  # Listado de hoteles con filtros
 │   │   └── filter_modal.dart           # Modal de rango de precio y estrellas
 │   ├── hotel_detail/             # Módulo de Detalle
-│   │   ├── hotel_detail_screen.dart    # Ficha del hotel, amenidades y fotos
+│   │   ├── hotel_detail_screen.dart    # Ficha del hotel, amenidades y fotos (Preparado estático)
 │   │   └── select_room_screen.dart     # Selección de habitación disponible
 │   ├── booking/                  # Módulo de Reserva
 │   │   ├── checkout_screen.dart        # Confirmación de fechas, huésped y desglose
@@ -280,7 +280,7 @@ lib/
 │   └── widgets/                  # Widgets reutilizables comunes
 │       ├── custom_button.dart
 │       ├── custom_text_field.dart
-│       ├── hotel_card.dart
+│       ├── hotel_card.dart           # Tarjeta de hotel estilo Booking (Implementado)
 │       └── rating_badge.dart
 └── main.dart                     # Punto de entrada de la aplicación
 ```
