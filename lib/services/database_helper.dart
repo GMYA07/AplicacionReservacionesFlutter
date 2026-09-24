@@ -25,7 +25,15 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
 
     // Abre la BD y llama a _createDB la primera vez que se ejecute la app
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 1,
+      onConfigure: (db) async {
+        // Habilita el soporte para claves foráneas y borrado en cascada
+        await db.execute('PRAGMA foreign_keys = ON');
+      },
+      onCreate: _createDB,
+    );
   }
 
   // 4. Creación de tablas iniciales
@@ -82,6 +90,19 @@ class DatabaseHelper {
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (room_id) REFERENCES rooms (id) ON DELETE CASCADE
+  );
+''');
+
+    // 5. Tabla de Favoritos (Favorites - Relación N:M entre users y hotels)
+    await db.execute('''
+  CREATE TABLE favorites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    hotel_id INTEGER NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (hotel_id) REFERENCES hotels (id) ON DELETE CASCADE,
+    UNIQUE (user_id, hotel_id)
   );
 ''');
   }

@@ -2,11 +2,12 @@
 
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
-import '../auth/login_screen.dart';
+import '../../utils/app_colors.dart';
+import 'widgets/guests_selection_modal.dart';
+import 'widgets/user_profile_modal.dart';
 
-/// Pantalla temporal y simple de bienvenida para verificar
-/// que el inicio de sesión y el registro funcionan correctamente.
-class HomeScreen extends StatelessWidget {
+/// Pantalla principal (Home) inspirada en la interfaz de Booking.com.
+class HomeScreen extends StatefulWidget {
   final UserModel user;
 
   const HomeScreen({
@@ -15,78 +16,458 @@ class HomeScreen extends StatelessWidget {
   });
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // Controlador para el campo de búsqueda de destino
+  final TextEditingController _destinationController = TextEditingController();
+
+  // Fechas de reserva seleccionadas
+  DateTimeRange? _selectedDateRange;
+
+  // Contador de huéspedes y habitaciones
+  int _rooms = 1;
+  int _adults = 2;
+  int _children = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fechas por defecto: entrada mañana y salida en 3 días
+    final now = DateTime.now();
+    _selectedDateRange = DateTimeRange(
+      start: now.add(const Duration(days: 1)),
+      end: now.add(const Duration(days: 4)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _destinationController.dispose();
+    super.dispose();
+  }
+
+  /// Formatea el rango de fechas para mostrarlo en el buscador
+  String _formatDateRange(DateTimeRange? range) {
+    if (range == null) return 'Selecciona las fechas';
+    final months = [
+      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+      'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+    ];
+    final start = range.start;
+    final end = range.end;
+    return '${start.day} ${months[start.month - 1]} - ${end.day} ${months[end.month - 1]}';
+  }
+
+  /// Muestra el selector nativo de rango de fechas
+  Future<void> _pickDateRange() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      initialDateRange: _selectedDateRange,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryNavy,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: AppColors.textDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDateRange = picked;
+      });
+    }
+  }
+
+  /// Abre el modal modular de huéspedes y habitaciones
+  Future<void> _openGuestsModal() async {
+    final result = await GuestsSelectionModal.show(
+      context,
+      rooms: _rooms,
+      adults: _adults,
+      children: _children,
+    );
+
+    if (result != null) {
+      setState(() {
+        _rooms = result.rooms;
+        _adults = result.adults;
+        _children = result.children;
+      });
+    }
+  }
+
+  /// Abre el modal modular de perfil de usuario
+  void _openUserProfileModal() {
+    UserProfileModal.show(context, user: widget.user);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final firstName = widget.user.name.split(' ').first;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Booking App',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFF003B95), // Azul oficial Booking
-        automaticallyImplyLeading: false, // Quita la flecha de atrás automática
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+      backgroundColor: AppColors.backgroundGray,
+      body: SafeArea(
+        child: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(
-                Icons.check_circle_outline,
-                size: 80,
-                color: Color(0xFF008234), // Verde de confirmación
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '¡Sesión iniciada con éxito!',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Bienvenido(a), ${user.name}',
-                style: const TextStyle(fontSize: 18, color: Color(0xFF003B95)),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                user.email,
-                style: const TextStyle(fontSize: 15, color: Colors.grey),
-              ),
-              if (user.phone != null && user.phone!.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              // ==========================================
+              // 1. CABECERA AZUL ESTILO BOOKING.COM
+              // ==========================================
+              Container(
+                color: AppColors.primaryNavy,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.phone, size: 16, color: Colors.grey),
-                    const SizedBox(width: 6),
+                    // Fila superior: Logo + Nombre "Booking" e Identificador de Usuario
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Nombre y Logo de la app
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.hotel_rounded,
+                                color: AppColors.primaryNavy,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Booking',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Identificador de usuario (Avatar + Nombre interactivo)
+                        InkWell(
+                          onTap: _openUserProfileModal,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor: AppColors.bookingYellow,
+                                  child: Text(
+                                    firstName.isNotEmpty
+                                        ? firstName[0].toUpperCase()
+                                        : 'U',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primaryNavy,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  firstName,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Título y lema de bienvenida estilo Booking
+                    const Text(
+                      'Encuentra tu próximo alojamiento',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     Text(
-                      user.phone!,
-                      style: const TextStyle(fontSize: 15, color: Colors.grey),
+                      'Busca ofertas en hoteles, apartamentos y mucho más',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
                     ),
                   ],
                 ),
-              ],
-              const SizedBox(height: 40),
+              ),
 
-              // Botón simple de Cerrar sesión
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Regresamos a la pantalla de Login y limpiamos el historial de navegación
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
-                icon: const Icon(Icons.logout),
-                label: const Text('Cerrar sesión'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade700,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              // ==========================================
+              // 2. BUSCADOR ESTILO BOOKING (Borde Amarillo)
+              // ==========================================
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceWhite,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.bookingYellow,
+                      width: 4.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      // 1. Campo de texto: Destino
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.search,
+                              color: AppColors.textDark,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _destinationController,
+                                decoration: const InputDecoration(
+                                  hintText: '¿A dónde vas?',
+                                  hintStyle: TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 16,
+                                  ),
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                            if (_destinationController.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () {
+                                  setState(() {
+                                    _destinationController.clear();
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      const Divider(height: 1, color: AppColors.bookingYellow),
+
+                      // 2. Selector de Fechas
+                      InkWell(
+                        onTap: _pickDateRange,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.calendar_today_outlined,
+                                color: AppColors.textDark,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                _formatDateRange(_selectedDateRange),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const Divider(height: 1, color: AppColors.bookingYellow),
+
+                      // 3. Selector de Huéspedes y Habitaciones
+                      InkWell(
+                        onTap: _openGuestsModal,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.person_outline,
+                                color: AppColors.textDark,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                '$_rooms hab · ${_adults + _children} personas',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // 4. Botón de búsqueda "Buscar"
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final destination = _destinationController.text.trim();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  destination.isEmpty
+                                      ? 'Buscando todos los alojamientos disponibles...'
+                                      : 'Buscando alojamientos en "$destination"...',
+                                ),
+                                backgroundColor: AppColors.primaryNavy,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accentBlue,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Buscar',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+
+              // ==========================================
+              // 3. DESTINOS RÁPIDOS SUGERIDOS
+              // ==========================================
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Destinos populares',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          'Cancún',
+                          'Ciudad de México',
+                          'Guadalajara',
+                          'Monterrey',
+                          'Playa del Carmen',
+                        ].map((city) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ActionChip(
+                              label: Text(city),
+                              avatar: const Icon(
+                                Icons.location_on_outlined,
+                                size: 16,
+                                color: AppColors.primaryNavy,
+                              ),
+                              backgroundColor: Colors.white,
+                              labelStyle: const TextStyle(
+                                color: AppColors.textDark,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: const BorderSide(
+                                  color: AppColors.borderLight,
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _destinationController.text = city;
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
             ],
           ),
         ),

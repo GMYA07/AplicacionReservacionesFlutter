@@ -96,6 +96,8 @@ erDiagram
     users ||--o{ reservations : "realiza (user_id)"
     hotels ||--o{ rooms : "posee (hotel_id)"
     rooms ||--o{ reservations : "se reserva (room_id)"
+    users ||--o{ favorites : "guarda (user_id)"
+    hotels ||--o{ favorites : "es guardado en (hotel_id)"
 
     users {
         int id PK "AUTOINCREMENT"
@@ -134,6 +136,13 @@ erDiagram
         string check_out "NOT NULL (ISO 'YYYY-MM-DD')"
         real total_price "NOT NULL"
         string status "DEFAULT 'confirmed'"
+        string created_at "DEFAULT datetime('now')"
+    }
+
+    favorites {
+        int id PK "AUTOINCREMENT"
+        int user_id FK "REFERENCES users(id) ON DELETE CASCADE"
+        int hotel_id FK "REFERENCES hotels(id) ON DELETE CASCADE"
         string created_at "DEFAULT datetime('now')"
     }
 ```
@@ -182,7 +191,14 @@ erDiagram
   - `check_out`: Fecha de salida en formato ISO `YYYY-MM-DD` (`TEXT NOT NULL`).
   - `total_price`: Importe total liquidado de la estancia (`REAL NOT NULL`).
   - `status`: Estado de la reserva (`'confirmed'`, `'cancelled'`, `'completed'`).
-  - `created_at`: Timestamp de creación (`TEXT DEFAULT (datetime('now'))`).
+#### 5. Tabla `favorites`
+- **Propósito**: Registra los hoteles guardados/favoritos por cada usuario (relación Muchos a Muchos N:M).
+- **Campos**:
+  - `id`: Clave primaria autoincremental (`INTEGER PRIMARY KEY AUTOINCREMENT`).
+  - `user_id`: Llave foránea hacia `users(id)` con `ON DELETE CASCADE`.
+  - `hotel_id`: Llave foránea hacia `hotels(id)` con `ON DELETE CASCADE`.
+  - `created_at`: Timestamp de guardado (`TEXT DEFAULT (datetime('now'))`).
+  - Restricción de unicidad: `UNIQUE(user_id, hotel_id)` para impedir registros duplicados.
 
 ### 3.4. Reglas y Buenas Prácticas de Persistencia en el Proyecto
 1. **Activación de Claves Foráneas**: En SQLite las restricciones foráneas vienen desactivadas por defecto. Para asegurar la integridad referencial y las eliminaciones en cascada (`ON DELETE CASCADE`), se debe configurar `onConfigure` en `openDatabase`:
@@ -228,9 +244,10 @@ lib/
 │   ├── user_model.dart           # Entidad User (id, name, email, password) (Implementado)
 │   ├── hotel_model.dart          # Entidad Hotel (id, name, city, stars, image_url, etc.)
 │   ├── room_model.dart           # Entidad Room (id, hotel_id, room_type, price, capacity)
-│   └── reservation_model.dart    # Entidad Reservation (id, user_id, room_id, dates, total)
+│   ├── reservation_model.dart    # Entidad Reservation (id, user_id, room_id, dates, total)
+│   └── favorite_model.dart       # Entidad Favorite (id, user_id, hotel_id, created_at)
 ├── services/                     # Capa de datos y persistencia
-│   ├── database_helper.dart      # Singleton SQLite: tablas users, hotels, rooms, reservations (Implementado)
+│   ├── database_helper.dart      # Singleton SQLite: tablas users, hotels, rooms, reservations, favorites (Implementado)
 │   ├── auth_service.dart         # Operaciones SQL de usuarios (Implementado)
 │   ├── hotel_service.dart        # Consultas SQL de hoteles y habitaciones (con Seed Data)
 │   └── booking_service.dart      # Operaciones SQL de reservas e historial
@@ -244,8 +261,11 @@ lib/
 │   │   ├── login_screen.dart     # Pantalla de Login reactiva (Implementada)
 │   │   └── register_screen.dart  # Pantalla de Registro reactiva (Implementada)
 │   ├── home/                     # Módulo Principal
-│   │   ├── home_screen.dart      # Pantalla de bienvenida / Dashboard temporal (Implementada)
-│   │   └── main_navigation_screen.dart # BottomNavigationBar (Buscar, Guardados, Reservas, Perfil)
+│   │   ├── home_screen.dart      # Pantalla principal con cabecera y buscador Booking
+│   │   ├── main_navigation_screen.dart # BottomNavigationBar (Buscar, Guardados, Reservas, Perfil)
+│   │   └── widgets/              # Componentes modulares del Home
+│   │       ├── guests_selection_modal.dart # Modal para habitaciones y huéspedes
+│   │       └── user_profile_modal.dart     # Modal de perfil y cierre de sesión
 │   ├── search/                   # Módulo de Búsqueda
 │   │   ├── search_results_screen.dart  # Listado de hoteles con filtros
 │   │   └── filter_modal.dart           # Modal de rango de precio y estrellas
@@ -271,17 +291,20 @@ lib/
 
 1. **Persistencia SQLite Implementada (`lib/services/database_helper.dart`)**:
    - Conexión Singleton operativa con `sqflite` y `path`.
-   - 4 tablas creadas: `users`, `hotels`, `rooms` y `reservations`, con claves foráneas e integridad referencial en cascada.
+   - 5 tablas creadas: `users`, `hotels`, `rooms`, `reservations` y `favorites`, con claves foráneas e integridad referencial en cascada.
 2. **Módulo de Autenticación Completado (MVC Completo)**:
    - `UserModel` (`lib/models/user_model.dart`): Mapeo completo `toMap()`, `fromMap()` y `copyWith()`.
    - `AuthService` (`lib/services/auth_service.dart`): Consultas SQL para registro, login con validación de credenciales, y comprobación de correos duplicados.
    - `AuthController` (`lib/controllers/auth_controller.dart`): Gestión de estados reactivos (`isLoading`, `errorMessage`, `currentUser`), validación de entradas y notificación a vistas.
    - `LoginScreen` y `RegisterScreen`: Interfaces de usuario funcionales, conectadas a `AuthController` mediante `ListenableBuilder` y validadas sin errores ni advertencias de linter.
-3. **Módulo Inicial de Bienvenida (`lib/views/home/home_screen.dart`)**:
-   - Pantalla de bienvenida con confirmación visual del usuario logueado y botón para cerrar sesión.
+3. **Módulo Principal Home (`lib/views/home/`)**:
+   - Cabecera con branding Booking e identificador interactivo de usuario.
+   - Buscador oficial con borde amarillo (`#FEBB02`), selección de destino y fechas.
+   - Componentes modulares en `lib/views/home/widgets/`: `GuestsSelectionModal` y `UserProfileModal`.
 4. **Modelos de Entidad Completados**:
    - `UserModel` (`lib/models/user_model.dart`): Mapeo completo con `toMap()`, `fromMap()`, `copyWith()` (soporta `phone` y `created_at`).
    - `HotelModel` (`lib/models/hotel_model.dart`): Mapeo de la tabla `hotels` (`name`, `city`, `stars`, `image_url`, etc.).
    - `RoomModel` (`lib/models/room_model.dart`): Mapeo de la tabla `rooms` (`hotel_id`, `room_type`, `price_per_night`, `capacity`, conversión booleana de `is_available`).
    - `ReservationModel` (`lib/models/reservation_model.dart`): Mapeo de la tabla `reservations` (`user_id`, `room_id`, fechas ISO, `total_price`, `status`).
+   - `FavoriteModel` (`lib/models/favorite_model.dart`): Mapeo de la tabla `favorites` (`user_id`, `hotel_id`, `created_at`).
 
