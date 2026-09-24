@@ -1,14 +1,22 @@
+// lib/models/user_model.dart
+
+/// Modelo que representa un usuario en SQLite.
+/// Mapea la tabla 'users'.
 class UserModel {
   final int? id; // El id es opcional (?) porque al registrarlo, SQLite lo autoincrementa
   final String name;
   final String email;
   final String password;
+  final String? phone;
+  final String? createdAt;
 
   const UserModel({
     this.id,
     required this.name,
     required this.email,
     required this.password,
+    this.phone,
+    this.createdAt,
   });
 
   /// Convierte el objeto UserModel a un Map (para guardarlo en SQLite con db.insert)
@@ -17,6 +25,8 @@ class UserModel {
       'name': name,
       'email': email,
       'password': password,
+      'phone': phone,
+      'created_at': createdAt,
     };
     if (id != null) {
       map['id'] = id;
@@ -31,6 +41,8 @@ class UserModel {
       name: map['name'] as String,
       email: map['email'] as String,
       password: map['password'] as String,
+      phone: map['phone'] as String?,
+      createdAt: map['created_at'] as String?,
     );
   }
 
@@ -40,12 +52,16 @@ class UserModel {
     String? name,
     String? email,
     String? password,
+    String? phone,
+    String? createdAt,
   }) {
     return UserModel(
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       password: password ?? this.password,
+      phone: phone ?? this.phone,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

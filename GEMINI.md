@@ -279,46 +279,9 @@ lib/
    - `LoginScreen` y `RegisterScreen`: Interfaces de usuario funcionales, conectadas a `AuthController` mediante `ListenableBuilder` y validadas sin errores ni advertencias de linter.
 3. **Módulo Inicial de Bienvenida (`lib/views/home/home_screen.dart`)**:
    - Pantalla de bienvenida con confirmación visual del usuario logueado y botón para cerrar sesión.
-4. **Próximos Componentes a Desarrollar**:
-   - Modelos de `HotelModel`, `RoomModel` y `ReservationModel`.
-   - `HotelService` con mecanismo de **Seeding** para precargar hoteles y habitaciones en SQLite en la primera instalación.
-   - Navegación principal mediante `MainNavigationScreen` con `BottomNavigationBar` de 4 secciones.
+4. **Modelos de Entidad Completados**:
+   - `UserModel` (`lib/models/user_model.dart`): Mapeo completo con `toMap()`, `fromMap()`, `copyWith()` (soporta `phone` y `created_at`).
+   - `HotelModel` (`lib/models/hotel_model.dart`): Mapeo de la tabla `hotels` (`name`, `city`, `stars`, `image_url`, etc.).
+   - `RoomModel` (`lib/models/room_model.dart`): Mapeo de la tabla `rooms` (`hotel_id`, `room_type`, `price_per_night`, `capacity`, conversión booleana de `is_available`).
+   - `ReservationModel` (`lib/models/reservation_model.dart`): Mapeo de la tabla `reservations` (`user_id`, `room_id`, fechas ISO, `total_price`, `status`).
 
----
-
-## 🚀 7. Hoja de Ruta Actualizada (Roadmap)
-
-- [x] **Fase 1: Configuración Base y Base de Datos SQLite**
-  - Implementar `DatabaseHelper` con las tablas `users`, `hotels`, `rooms` y `reservations`.
-  - Configurar dependencias (`sqflite`, `path`) y asegurar integridad con claves foráneas.
-- [x] **Fase 2: Arquitectura MVC de Autenticación**
-  - Desarrollar `UserModel` con métodos de serialización SQLite.
-  - Desarrollar `AuthService` con consultas SQL de inserción y autenticación.
-  - Desarrollar `AuthController` con control de estados y notificaciones reactivas.
-  - Conectar `LoginScreen` y `RegisterScreen` de forma reactiva con feedback visual.
-- [ ] **Fase 3: Sembrado de Datos (Seed Data) y Servicios de Alojamiento**
-  - Implementar `HotelModel` y `RoomModel` con serialización `fromMap`/`toMap`.
-  - Crear datos semilla iniciales de hoteles y habitaciones en `database_helper.dart` o `hotel_service.dart`.
-  - Implementar métodos de consulta en `HotelService`: listar todos los hoteles, filtrar por ciudad, y consultar habitaciones por `hotel_id`.
-- [ ] **Fase 4: Navegación Principal Móvil (`MainNavigationScreen`)**
-  - Barra de navegación inferior (BottomNavigationBar) con 4 pestañas:
-    1. 🔍 **Buscar** (Home con buscador interactivo)
-    2. 💙 **Guardados** (Favoritos locales)
-    3. 🧳 **Reservas** (Reservas activas y pasadas del usuario actual en SQLite)
-    4. 👤 **Perfil** (Datos de cuenta y opción de cerrar sesión)
-- [ ] **Fase 5: Pantalla de Inicio y Buscador de Hoteles (Home)**
-  - Banner de destino ("¿A dónde vas?"), selector de fechas de estancia y número de huéspedes.
-  - Sección de promociones y carrusel de alojamientos recomendados cargados desde SQLite.
-- [ ] **Fase 6: Resultados de Búsqueda y Filtros**
-  - Pantalla con tarjetas de hoteles obtenidas de SQLite con filtros dinámicos (estrellas, ciudad, rango de precios).
-  - Componente de badge de calificación ("Fantástico 9.2").
-- [ ] **Fase 7: Ficha Detallada del Hotel y Selección de Habitación**
-  - Galería visual, ubicación, amenidades y consulta de habitaciones asociadas (`rooms` filtradas por `hotel_id`).
-  - Tarjetas de habitación con capacidad, precio por noche y botón "Reservar".
-- [ ] **Fase 8: Flujo de Reserva y Persistencia de Transacciones**
-  - Implementar `ReservationModel` y `BookingService`.
-  - Inserción en la tabla `reservations` asociando `user_id`, `room_id`, fechas de entrada/salida y precio total calculado.
-  - Pantalla de confirmación con código de reserva.
-- [ ] **Fase 9: Gestión de Reservas y Perfil de Usuario**
-  - Pantalla de mis reservas con consulta `INNER JOIN` entre `reservations`, `rooms` y `hotels` para el usuario en sesión.
-  - Funcionalidad para cancelar reservas activas (`status = 'cancelled'`).
